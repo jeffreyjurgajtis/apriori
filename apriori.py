@@ -6,31 +6,108 @@ class Apriori(object):
         dirname = os.path.dirname(os.path.abspath(__file__))
         self.path_to_data = os.path.join(dirname, 'categories.txt')
         self.min_support = min_support
-        self.itemsets = dict()
-        self.frequent_itemsets = dict()
+        self.transactions = self.build_transactions()
+        self.frequent_itemset = dict()
+        self.build_k1_frequent_itemset()
 
-    def build_itemsets(self):
+    """
+    Build transaction list from categories.txt file
+    """
+    def build_transactions(self):
+        transactions = list()
+
         with open(self.path_to_data, 'r') as category_file:
             for line in category_file.readlines():
-                for item in line.split(';'):
-                    item = item.rstrip()
-                    self.itemsets.setdefault(item, 0)
-                    self.itemsets[item] += 1
+                categories = [category.rstrip() for category in line.split(';')]
+                transactions.append(categories)
 
-    def build_frequent_itemsets(self):
-        for item, support in self.itemsets.items():
+        return transactions
+
+    """
+    Build initial k1 frequent itemset
+    """
+    def build_k1_frequent_itemset(self):
+        itemset = dict()
+        frequent_itemset = dict()
+
+        for transaction in self.transactions:
+            for category in transaction:
+                itemset.setdefault(category, 0)
+                itemset[category] += 1
+
+        for category, support in itemset.items():
             if support > self.min_support:
-                self.frequent_itemsets[item] = support
+                frequent_itemset[category] = support
 
-        output = open('patterns.txt', 'w')
-        for item, support in self.frequent_itemsets.items():
-            output.write(f'{support}:{item}\n')
-        output.close()
+        self.frequent_itemset[1] = frequent_itemset
+
+    """
+    Generate K itemset
+    """
+    def generate_itemset(self, current_itemset, k):
+        categories = set()
+        new_itemset = dict()
+
+        for key in current_itemset.keys():
+            row = frozenset([category.strip() for category in key.split(';')])
+            categories.add(row)
+
+        patterns = set([x.union(y) for x in categories for y in categories \
+                if len(x.union(y)) == k])
+
+        for pattern in patterns:
+            pattern = list(pattern)
+            key = ';'.join(pattern)
+            new_itemset.setdefault(key, 0)
+            print(key)
+
+            for transaction in self.transactions:
+                is_match = all(category in transaction for category in pattern)
+                if is_match:
+                    new_itemset[key] += 1
+
+        return new_itemset
+
+    """
+    Remove all items that do not meet minsup
+    """
+    def prune_itemset(self, current_itemset):
+        frequent_itemset = dict()
+
+        for pattern, support in current_itemset.items():
+            if support > self.min_support:
+                frequent_itemset[pattern] = support
+
+        return frequent_itemset
+
+    """
+    Run the apriori algorithm
+    """
+    def run(self):
+        current_itemset = self.frequent_itemset[1]
+        k = 1
+
+        while len(self.frequent_itemset[k]) > 0:
+            k += 1
+            current_itemset = self.generate_itemset(current_itemset, k)
+            current_itemset = self.prune_itemset(current_itemset)
+            self.frequent_itemset[k] = current_itemset
+            print(current_itemset)
+
+    """
+    Write patterns to file
+    """
+    def write_itemsets_to_file(self, filename):
+        with open(filename, 'w') as result_file:
+            for itemset in self.frequent_itemset.values():
+                for pattern, support in itemset.items():
+                    result_file.write(f'{support}:{pattern}\n')
+
 
 def main():
     apriori = Apriori(771)
-    apriori.build_itemsets()
-    apriori.build_frequent_itemsets()
+    apriori.run()
+    apriori.write_itemsets_to_file('patterns.txt')
     # import code; code.interact(local=dict(globals(), **locals()))
 
 if __name__ == '__main__':
