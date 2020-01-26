@@ -2,16 +2,15 @@ import os
 import numpy
 
 class Apriori(object):
-    def __init__(self, min_support):
+    def __init__(self, min_support, input_filename):
         dirname = os.path.dirname(os.path.abspath(__file__))
-        self.path_to_data = os.path.join(dirname, 'categories.txt')
+        self.path_to_data = os.path.join(dirname, input_filename)
         self.min_support = min_support
         self.transactions = self.build_transactions()
         self.frequent_itemset = dict()
-        self.build_k1_frequent_itemset()
 
     """
-    Build transaction list from categories.txt file
+    Build transaction list from input file
     """
     def build_transactions(self):
         transactions = list()
@@ -26,20 +25,15 @@ class Apriori(object):
     """
     Build initial k1 frequent itemset
     """
-    def build_k1_frequent_itemset(self):
+    def generate_k1_itemset(self):
         itemset = dict()
-        frequent_itemset = dict()
 
         for transaction in self.transactions:
             for category in transaction:
                 itemset.setdefault(category, 0)
                 itemset[category] += 1
 
-        for category, support in itemset.items():
-            if support > self.min_support:
-                frequent_itemset[category] = support
-
-        self.frequent_itemset[1] = frequent_itemset
+        return itemset
 
     """
     Generate K itemset
@@ -84,8 +78,10 @@ class Apriori(object):
     Run the apriori algorithm
     """
     def run(self):
-        current_itemset = self.frequent_itemset[1]
         k = 1
+        current_itemset = self.generate_k1_itemset()
+        current_itemset = self.prune_itemset(current_itemset)
+        self.frequent_itemset[k] = current_itemset
 
         while len(self.frequent_itemset[k]) > 0:
             k += 1
@@ -105,10 +101,9 @@ class Apriori(object):
 
 
 def main():
-    apriori = Apriori(771)
+    apriori = Apriori(min_support=771, input_filename='categories.txt')
     apriori.run()
     apriori.write_itemsets_to_file('patterns.txt')
-    # import code; code.interact(local=dict(globals(), **locals()))
 
 if __name__ == '__main__':
     main()
