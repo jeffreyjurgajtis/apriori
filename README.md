@@ -1,7 +1,7 @@
 Apriori
 =======
 
-A Python implementation of the [Apriori](https://en.wikipedia.org/wiki/Apriori_algorithm) algorithm — an algorithm used to identify patterns in datasets.
+A Python implementation of the [Apriori](https://en.wikipedia.org/wiki/Apriori_algorithm) algorithm — a data mining algorithm used to identify patterns in datasets.
 
 ### Usage
 
@@ -12,8 +12,8 @@ apriori = Apriori(min_support=771, input_filename='categories.txt')
 apriori.run()
 apriori.write_itemsets_to_file('patterns.txt')
 
-# See k frequent itemsets. For each k, keys are patterns and values are absolute support:
-apriori.frequent_itemset
+# See frequent itemsets. For each k, keys are patterns and values are absolute support:
+print(apriori.frequent_itemset)
 
 # {
 #   1 => { 'Pattern 1' => 243, ... },
